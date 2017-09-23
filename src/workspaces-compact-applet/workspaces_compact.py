@@ -65,10 +65,15 @@ class WorkspacesCompactApplet(Budgie.Applet):
         self.ev_box = Gtk.EventBox()
         self.ev_box.add_events(Gdk.EventMask.SCROLL_MASK)
         self.ev_box.connect('scroll-event', self.on_scroll)
+        self.ev_box.connect('button-release-event', self.on_button_release)
         self.ev_box.add(self.label) 
         self.add(self.ev_box)
 
         self.show_all()
+        self.update_content()
+
+    def on_workspace_changed(self, wscr, prev_ws, udata=None):
+        """ Handle workspace changes """
         self.update_content()
 
     def update_content(self):
@@ -83,43 +88,8 @@ class WorkspacesCompactApplet(Budgie.Applet):
         # else:
         #     print ("WorkspacesCompactApplet-WARNING: current workspace is None!")
 
-    def on_workspace_changed(self, wscr, prev_ws, udata=None):
-        self.update_content()
-
-    def get_next_workspace(self, wrap=True):
-        ws = self.wn_screen.get_active_workspace()
-
-        if ws is not None:
-            count = self.wn_screen.get_workspace_count()
-            ws_index = ws.get_number()
-
-            if (ws_index + 1) < count:
-                return self.wn_screen.get_workspace(ws_index + 1)
-            else:
-                # Last reached: wrap around to the first workspace if requested
-                # otherwise return current workspace
-                return ws if not wrap else self.wn_screen.get_workspace(0)
-        else:
-            return None
-
-    def get_prev_workspace(self, wrap=True):
-        ws = self.wn_screen.get_active_workspace()
-
-        if ws is not None:
-            count = self.wn_screen.get_workspace_count()
-            ws_index = ws.get_number()
-
-            if (ws_index - 1) >= 0:
-                return self.wn_screen.get_workspace(ws_index - 1)
-            else:
-                # First reached: wrap around to the last workspace if requested
-                # otherwise return current workspace
-                return ws if not wrap else self.wn_screen.get_workspace(count - 1)
-        else:
-            return None
-
     def on_scroll(self, widget, e):
-        """ Handle scroll wheel. Scrolling down switches to the next workspace and vice versa. """
+        """ Handle the scroll wheel """
 
         if e.direction == Gdk.ScrollDirection.UP:
             # print ("You scrolled up, switch to prev workspace")
@@ -132,6 +102,58 @@ class WorkspacesCompactApplet(Budgie.Applet):
             next_ws = self.get_next_workspace()
             if next_ws is not None:
                 next_ws.activate(x11_now())
+
+    def on_button_release(self, widget, e, udata=None):
+        """ Handle mouse button clicks """
+
+        if e.button == 1: # left mouse button
+            next_ws = self.get_next_workspace()
+            if next_ws is not None:
+                next_ws.activate(x11_now())
+
+    def get_next_workspace(self, wrap=True):
+        """
+        Determine and fetch the next workspace
+        If "wrap" is true then calling this method on the last workspace
+        will wrap around and return the first workspace
+        If "wrap" is false then calling on the last workspace will return that workspace
+        """
+        ws = self.wn_screen.get_active_workspace()
+
+        if ws is not None:
+            count = self.wn_screen.get_workspace_count()
+            ws_index = ws.get_number()
+
+            if (ws_index + 1) < count:
+                return self.wn_screen.get_workspace(ws_index + 1)
+            else:
+                # Last reached: wrap around to the first workspace if requested
+                return ws if not wrap else self.wn_screen.get_workspace(0)
+        else:
+            return None
+
+    def get_prev_workspace(self, wrap=True):
+        """
+        Determine and fetch the previous workspace
+        If "wrap" is true then calling this method on the first workspace
+        will wrap around and return the last workspace
+        If "wrap" is false then calling on the first workspace will return that workspace
+        """
+        ws = self.wn_screen.get_active_workspace()
+
+        if ws is not None:
+            count = self.wn_screen.get_workspace_count()
+            ws_index = ws.get_number()
+
+            if (ws_index - 1) >= 0:
+                return self.wn_screen.get_workspace(ws_index - 1)
+            else:
+                # First reached: wrap around to the last workspace if requested
+                return ws if not wrap else self.wn_screen.get_workspace(count - 1)
+        else:
+            return None
+
+
 
 # Utils
 
