@@ -9,7 +9,8 @@ A more space-efficient workspace switcher applet for the Budgie Desktop
 * Scroll wheel support
 
 ## Installing
-  * Execute the install script
+* Download or clone the repo 
+* Execute the install script
 ```
 ./install.sh
 ```
