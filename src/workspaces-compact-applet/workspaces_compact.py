@@ -58,11 +58,12 @@ class WorkspacesCompactApplet(Budgie.Applet):
         self.add(self.label) 
 
         self.show_all()
+        self.update_content()
 
         # Hook up Wnck signals
         self.wn_screen.connect_after('active-workspace-changed', self.on_workspace_changed)
 
-    def on_workspace_changed(self, wscr, prev_ws, udata=None):
+    def update_content(self):
         ws = self.wn_screen.get_active_workspace()
 
         if ws is not None:
@@ -72,4 +73,7 @@ class WorkspacesCompactApplet(Budgie.Applet):
             self.label.set_tooltip_text(ws.get_name())
         # else:
         #     print ("WorkspacesCompactApplet-WARNING: current workspace is None!")
+
+    def on_workspace_changed(self, wscr, prev_ws, udata=None):
+        self.update_content()
 
