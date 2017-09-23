@@ -86,26 +86,55 @@ class WorkspacesCompactApplet(Budgie.Applet):
     def on_workspace_changed(self, wscr, prev_ws, udata=None):
         self.update_content()
 
-    def on_scroll(self, widget, e):
-        """ Handle scroll wheel. Scrolling down switches to the next workspace and vice versa. """
+    def get_next_workspace(self, wrap=True):
         ws = self.wn_screen.get_active_workspace()
 
         if ws is not None:
             count = self.wn_screen.get_workspace_count()
             ws_index = ws.get_number()
-            now = GdkX11.x11_get_server_time(Gdk.Screen.get_root_window(Gdk.Screen.get_default()))
 
-            if e.direction == Gdk.ScrollDirection.UP:
-                # print ("You scrolled up, switch to prev workspace")
-                if (ws_index - 1) >= 0:
-                    prev_ws = self.wn_screen.get_workspace(ws_index - 1)
-                    if prev_ws is not None:
-                        prev_ws.activate(now)
-            elif e.direction == Gdk.ScrollDirection.DOWN:
-                # print ("You scrolled down, switch to next workspace")
-                if (ws_index + 1) <= count:
-                    next_ws = self.wn_screen.get_workspace(ws_index + 1)
-                    if next_ws is not None:
-                        next_ws.activate(now)
+            if (ws_index + 1) < count:
+                return self.wn_screen.get_workspace(ws_index + 1)
+            else:
+                # Last reached: wrap around to the first workspace if requested
+                # otherwise return current workspace
+                return ws if not wrap else self.wn_screen.get_workspace(0)
+        else:
+            return None
 
+    def get_prev_workspace(self, wrap=True):
+        ws = self.wn_screen.get_active_workspace()
 
+        if ws is not None:
+            count = self.wn_screen.get_workspace_count()
+            ws_index = ws.get_number()
+
+            if (ws_index - 1) >= 0:
+                return self.wn_screen.get_workspace(ws_index - 1)
+            else:
+                # First reached: wrap around to the last workspace if requested
+                # otherwise return current workspace
+                return ws if not wrap else self.wn_screen.get_workspace(count - 1)
+        else:
+            return None
+
+    def on_scroll(self, widget, e):
+        """ Handle scroll wheel. Scrolling down switches to the next workspace and vice versa. """
+
+        if e.direction == Gdk.ScrollDirection.UP:
+            # print ("You scrolled up, switch to prev workspace")
+            prev_ws = self.get_prev_workspace()
+            if prev_ws is not None:
+                prev_ws.activate(x11_now())
+
+        elif e.direction == Gdk.ScrollDirection.DOWN:
+            # print ("You scrolled down, switch to next workspace")
+            next_ws = self.get_next_workspace()
+            if next_ws is not None:
+                next_ws.activate(x11_now())
+
+# Utils
+
+def x11_now():
+    """ X11 server timestamp """
+    return GdkX11.x11_get_server_time(Gdk.Screen.get_root_window(Gdk.Screen.get_default()))
