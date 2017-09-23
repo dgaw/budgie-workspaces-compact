@@ -1,0 +1,8 @@
+[Plugin]
+Loader=python3
+Module=workspaces-compact
+Name=Workspace Switcher (compact)
+Description=Compact Workspace Switcher
+Authors=Damian Gaweda
+Copyright=Copyright © 2017 Damian Gaweda
+Icon=workspace-switcher-symbolic
