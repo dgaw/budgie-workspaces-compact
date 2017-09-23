@@ -28,7 +28,7 @@
 import gi.repository
 gi.require_version('Budgie', '1.0')
 gi.require_version('Wnck', '3.0')
-from gi.repository import Budgie, GObject, Wnck, Gtk
+from gi.repository import Budgie, GObject, Wnck, Gtk, Gdk, GdkX11
 
 class WorkspacesCompact(GObject.GObject, Budgie.Plugin):
     """ Note you must always override Object, and implement Plugin. """
@@ -45,25 +45,34 @@ class WorkspacesCompact(GObject.GObject, Budgie.Plugin):
 class WorkspacesCompactApplet(Budgie.Applet):
     wn_screen = None
     label = None
+    ev_box = None
 
     def __init__(self, uuid):
         Budgie.Applet.__init__(self)
-        self.wn_screen = Wnck.Screen.get_default()
 
+        # WnckScreen
+        self.wn_screen = Wnck.Screen.get_default()
+        self.wn_screen.connect_after('active-workspace-changed', self.on_workspace_changed)
+
+        # Label
         self.label = Gtk.Label("") 
         self.label.set_margin_start(6)
         self.label.set_margin_end(6)
         self.label.set_margin_top(6)
         self.label.set_margin_bottom(6)
-        self.add(self.label) 
+
+        # Event box
+        self.ev_box = Gtk.EventBox()
+        self.ev_box.add_events(Gdk.EventMask.SCROLL_MASK)
+        self.ev_box.connect('scroll-event', self.on_scroll)
+        self.ev_box.add(self.label) 
+        self.add(self.ev_box)
 
         self.show_all()
         self.update_content()
 
-        # Hook up Wnck signals
-        self.wn_screen.connect_after('active-workspace-changed', self.on_workspace_changed)
-
     def update_content(self):
+        """ Update the content of the label """
         ws = self.wn_screen.get_active_workspace()
 
         if ws is not None:
@@ -76,4 +85,27 @@ class WorkspacesCompactApplet(Budgie.Applet):
 
     def on_workspace_changed(self, wscr, prev_ws, udata=None):
         self.update_content()
+
+    def on_scroll(self, widget, e):
+        """ Handle scroll wheel. Scrolling down switches to the next workspace and vice versa. """
+        ws = self.wn_screen.get_active_workspace()
+
+        if ws is not None:
+            count = self.wn_screen.get_workspace_count()
+            ws_index = ws.get_number()
+            now = GdkX11.x11_get_server_time(Gdk.Screen.get_root_window(Gdk.Screen.get_default()))
+
+            if e.direction == Gdk.ScrollDirection.UP:
+                # print ("You scrolled up, switch to prev workspace")
+                if (ws_index - 1) >= 0:
+                    prev_ws = self.wn_screen.get_workspace(ws_index - 1)
+                    if prev_ws is not None:
+                        prev_ws.activate(now)
+            elif e.direction == Gdk.ScrollDirection.DOWN:
+                # print ("You scrolled down, switch to next workspace")
+                if (ws_index + 1) <= count:
+                    next_ws = self.wn_screen.get_workspace(ws_index + 1)
+                    if next_ws is not None:
+                        next_ws.activate(now)
+
 

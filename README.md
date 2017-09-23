@@ -5,7 +5,7 @@ A more space-efficient workspace switcher applet for the Budgie Desktop
 
 ## Features
 * Takes little space in the panel
-* (TODO) Switch workspaces with the mouse scroll wheel
+* Mouse scroll wheel support
 
 ## Installing
   * Execute the install script

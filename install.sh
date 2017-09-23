@@ -15,12 +15,16 @@ then
     exit 1
 fi
 
-# Actual installation
-echo "Installing Compact Workspace Switcher to $PLUGIN_DIR"
-if sudo cp -r ./src/workspaces-compact-applet "${PLUGIN_DIR}/" && budgie-panel --replace &
-then
-    echo "Done. You should be able to add the applet to your panel now."
-else
+function fail() {
     echo "FAIL: Installation failed. Please note any errors above."
     exit 1
-fi
+}
+
+# Actual installation
+echo "Installing Compact Workspace Switcher to $PLUGIN_DIR"
+
+sudo rm -rf "${PLUGIN_DIR}/workspaces-compact-applet" || fail
+sudo cp -r ./src/workspaces-compact-applet "${PLUGIN_DIR}/" || fail
+budgie-panel --replace &
+
+echo "Done. You should be able to add the applet to your panel now."
