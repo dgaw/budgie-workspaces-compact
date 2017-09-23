@@ -1,7 +1,7 @@
 # Compact Workspace Switcher for Budgie Desktop
 A more space-efficient workspace switcher applet for the Budgie Desktop
 
-![image](/dgaw/budgie-workspaces-compact/blob/master/data/screencap.gif?raw=true)
+![Screenshot](data/screencap.gif)
 
 ## Features
 * Takes little space in the panel
