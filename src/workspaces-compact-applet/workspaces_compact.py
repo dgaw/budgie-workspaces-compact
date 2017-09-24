@@ -46,6 +46,9 @@ class WorkspacesCompactApplet(Budgie.Applet):
     wn_screen = None
     label = None
     ev_box = None
+    popover = None
+    spin_button = None
+    manager = None
 
     def __init__(self, uuid):
         Budgie.Applet.__init__(self)
@@ -69,8 +72,34 @@ class WorkspacesCompactApplet(Budgie.Applet):
         self.ev_box.add(self.label) 
         self.add(self.ev_box)
 
+        # Settings popover
+        # ws = self.wn_screen.get_active_workspace()
+        # if ws is not None:
+        #     spin_val = ws.get_number()
+        # else:
+        spin_val = 1
+        adjustment = Gtk.Adjustment(spin_val, 1, 10, 1, 10, 0)
+        self.spin_button = Gtk.SpinButton()
+        self.spin_button.set_adjustment(adjustment)
+
+        spin_label = Gtk.Label("Workspaces")
+        spin_label.set_margin_end(6)
+
+        box = Gtk.Box(Gtk.Orientation.HORIZONTAL, 1)
+        box.set_border_width(6)
+        box.pack_start(spin_label, False, False, 0)
+        box.pack_start(self.spin_button, False, False, 0)
+        box.show_all()
+
+        self.popover = Budgie.Popover.new(self.ev_box)
+        self.popover.add(box);
+
         self.show_all()
         self.update_content()
+
+    def do_update_popovers(self, manager):
+        manager.register_popover(self.ev_box, self.popover)
+        self.manager = manager
 
     def on_workspace_changed(self, wscr, prev_ws, udata=None):
         """ Handle workspace changes """
@@ -110,6 +139,12 @@ class WorkspacesCompactApplet(Budgie.Applet):
             next_ws = self.get_next_workspace()
             if next_ws is not None:
                 next_ws.activate(x11_now())
+        elif e.button == 3:
+            if self.popover.get_visible() == True:
+                self.popover.hide()
+            else:
+                # self.popover.show()
+                self.manager.show_popover(self.ev_box)
 
     def get_next_workspace(self, wrap=True):
         """
