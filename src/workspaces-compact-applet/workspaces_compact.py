@@ -57,14 +57,14 @@ class WorkspacesCompactApplet(Budgie.Applet):
         self.wn_screen = Wnck.Screen.get_default()
         self.wn_screen.connect_after('active-workspace-changed', self.on_workspace_changed)
 
-        # Label
+        # Main label that displays the workspace number
         self.label = Gtk.Label("") 
         self.label.set_margin_start(6)
         self.label.set_margin_end(6)
         self.label.set_margin_top(6)
         self.label.set_margin_bottom(6)
 
-        # Event box
+        # Event box to catch those events
         self.ev_box = Gtk.EventBox()
         self.ev_box.add_events(Gdk.EventMask.SCROLL_MASK)
         self.ev_box.connect('scroll-event', self.on_scroll)
@@ -73,14 +73,8 @@ class WorkspacesCompactApplet(Budgie.Applet):
         self.add(self.ev_box)
 
         # Settings popover
-        # ws = self.wn_screen.get_active_workspace()
-        # if ws is not None:
-        #     spin_val = ws.get_number()
-        # else:
-        spin_val = 1
-        adjustment = Gtk.Adjustment(spin_val, 1, 10, 1, 10, 0)
         self.spin_button = Gtk.SpinButton()
-        self.spin_button.set_adjustment(adjustment)
+        self.spin_button.connect_after('value-changed', self.on_spin_button_changed)
 
         spin_label = Gtk.Label("Workspaces")
         spin_label.set_margin_end(6)
@@ -95,27 +89,44 @@ class WorkspacesCompactApplet(Budgie.Applet):
         self.popover.add(box);
 
         self.show_all()
-        self.update_content()
+        self.update_label()
 
     def do_update_popovers(self, manager):
+        """ Register with Budgie.PopoverManager """
         manager.register_popover(self.ev_box, self.popover)
         self.manager = manager
 
+    def on_spin_button_changed(self, btn, udata=None):
+        """ Handle the spin button - change number of workspaces """
+        val = int(btn.get_value())
+        if val > 0: # argh!
+            self.wn_screen.change_workspace_count(val)
+            self.update_label(ws_count=val)
+
     def on_workspace_changed(self, wscr, prev_ws, udata=None):
         """ Handle workspace changes """
-        self.update_content()
+        self.update_label()
+        self.update_spin_button()
 
-    def update_content(self):
+    def update_spin_button(self):
+        """ Set the spin button to the current number of workspaces """
+        ws_count = self.wn_screen.get_workspace_count()
+        if ws_count > 0:
+            self.spin_button.set_adjustment(Gtk.Adjustment(ws_count, 1, 10, 1, 10, 0))
+        else:
+            print ("WorkspacesCompactApplet-WARNING: couldn't get the number of workspaces for the popover!")
+
+    def update_label(self, ws_count=None):
         """ Update the content of the label """
         ws = self.wn_screen.get_active_workspace()
 
         if ws is not None:
-            count = self.wn_screen.get_workspace_count()
+            count = ws_count if ws_count is not None else self.wn_screen.get_workspace_count()
             text = str(ws.get_number()+1) + "/" + str(count)
             self.label.set_label(text)
             self.label.set_tooltip_text(ws.get_name())
         # else:
-        #     print ("WorkspacesCompactApplet-WARNING: current workspace is None!")
+        #     print ("WorkspacesCompactApplet-WARNING: update_label() - current workspace is None!")
 
     def on_scroll(self, widget, e):
         """ Handle the scroll wheel """
@@ -135,15 +146,17 @@ class WorkspacesCompactApplet(Budgie.Applet):
     def on_button_release(self, widget, e, udata=None):
         """ Handle mouse button clicks """
 
-        if e.button == 1: # left mouse button
+        # Left mouse button - switch to the next workspace
+        if e.button == 1: 
             next_ws = self.get_next_workspace()
             if next_ws is not None:
                 next_ws.activate(x11_now())
-        elif e.button == 3:
+
+        # Right mouse button - shows/hides the popover
+        elif e.button == 3: 
             if self.popover.get_visible() == True:
                 self.popover.hide()
             else:
-                # self.popover.show()
                 self.manager.show_popover(self.ev_box)
 
     def get_next_workspace(self, wrap=True):
@@ -195,3 +208,4 @@ class WorkspacesCompactApplet(Budgie.Applet):
 def x11_now():
     """ X11 server timestamp """
     return GdkX11.x11_get_server_time(Gdk.Screen.get_root_window(Gdk.Screen.get_default()))
+
