@@ -7,6 +7,7 @@ A more space-efficient workspace switcher applet for the Budgie Desktop
 * Switches workspaces. Yay!
 * Takes little space in the panel
 * Scroll wheel support
+* Ability to set the number of workspaces (right click)
 
 ## Installing
 * Download or clone the repo 
