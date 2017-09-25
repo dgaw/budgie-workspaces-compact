@@ -29,6 +29,10 @@ import gi.repository
 gi.require_version('Budgie', '1.0')
 gi.require_version('Wnck', '3.0')
 from gi.repository import Budgie, GObject, Wnck, Gtk, Gdk, GdkX11
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class WorkspacesCompact(GObject.GObject, Budgie.Plugin):
     """ Note you must always override Object, and implement Plugin. """
@@ -48,6 +52,7 @@ class WorkspacesCompactApplet(Budgie.Applet):
     ev_box = None
     popover = None
     spin_button = None
+    spin_adjust = None
     manager = None
 
     def __init__(self, uuid):
@@ -74,6 +79,8 @@ class WorkspacesCompactApplet(Budgie.Applet):
 
         # Settings popover
         self.spin_button = Gtk.SpinButton()
+        self.spin_adjust = Gtk.Adjustment(1, 1, 10, 1, 10, 0)
+        self.spin_button.set_adjustment(self.spin_adjust)
         self.spin_button.connect_after('value-changed', self.on_spin_button_changed)
 
         spin_label = Gtk.Label("Workspaces")
@@ -99,22 +106,25 @@ class WorkspacesCompactApplet(Budgie.Applet):
     def on_spin_button_changed(self, btn, udata=None):
         """ Handle the spin button - change number of workspaces """
         val = int(btn.get_value())
+        logger.debug("on_spin_button_changed() val: " + str(val))
         if val > 0: # argh!
             self.wn_screen.change_workspace_count(val)
             self.update_label(ws_count=val)
 
     def on_workspace_changed(self, wscr, prev_ws, udata=None):
         """ Handle workspace changes """
+        logger.debug("on_workspace_changed()")
         self.update_label()
         self.update_spin_button()
 
     def update_spin_button(self):
         """ Set the spin button to the current number of workspaces """
         ws_count = self.wn_screen.get_workspace_count()
+        logger.debug("update_spin_button() ws count: " + str(ws_count))
         if ws_count > 0:
-            self.spin_button.set_adjustment(Gtk.Adjustment(ws_count, 1, 10, 1, 10, 0))
+            self.spin_adjust.set_value(ws_count)
         else:
-            print ("WorkspacesCompactApplet-WARNING: couldn't get the number of workspaces for the popover!")
+            logger.error("update_spin_button(): couldn't get the number of workspaces for the popover!")
 
     def update_label(self, ws_count=None):
         """ Update the content of the label """
@@ -125,8 +135,8 @@ class WorkspacesCompactApplet(Budgie.Applet):
             text = str(ws.get_number()+1) + "/" + str(count)
             self.label.set_label(text)
             self.label.set_tooltip_text(ws.get_name())
-        # else:
-        #     print ("WorkspacesCompactApplet-WARNING: update_label() - current workspace is None!")
+        else:
+            logger.debug ("update_label() - current workspace is None!")
 
     def on_scroll(self, widget, e):
         """ Handle the scroll wheel """
